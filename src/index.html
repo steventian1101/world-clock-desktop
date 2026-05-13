@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Clock</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="light">
+  <header class="app-header">
+    <div class="title-row">
+      <span class="logo" aria-hidden="true">&#9201;</span>
+      <h1>World Clock</h1>
+      <div class="header-actions">
+        <button id="hourFormatBtn" class="icon-btn" title="Toggle 12/24-hour format" aria-label="Toggle hour format">
+          <span id="hourFormatLabel">12h</span>
+        </button>
+        <button id="themeBtn" class="icon-btn" title="Toggle dark/light theme" aria-label="Toggle theme">
+          <span id="themeIcon">&#9789;</span>
+        </button>
+        <button id="pinBtn" class="icon-btn pinned" title="Pin window (always on top)" aria-label="Toggle always on top">
+          <span id="pinIcon">&#128204;</span>
+        </button>
+      </div>
+    </div>
+    <div class="add-row">
+      <div class="search-wrap" id="globalSearchWrap">
+        <input id="globalSearch" class="search-input" type="text" placeholder="Search city or country..." autocomplete="off" spellcheck="false" />
+        <button id="globalSearchClear" class="search-clear" type="button" title="Clear search" aria-label="Clear search" hidden>&times;</button>
+        <ul id="globalSearchResults" class="search-results" role="listbox" hidden></ul>
+      </div>
+      <button id="addBtn" class="primary-btn add-plus" title="Add selected as new clock" aria-label="Add clock">+</button>
+    </div>
+  </header>
+
+  <main id="clockList" class="clock-list" aria-live="polite"></main>
+
+  <footer class="app-footer">
+    <span id="statusText" class="status"></span>
+    <button id="saveBtn" class="primary-btn footer-btn save-btn">Save</button>
+  </footer>
+
+  <template id="clockTemplate">
+    <section class="clock-card">
+      <button class="remove-btn" title="Remove this clock" aria-label="Remove clock">&times;</button>
+      <div class="selectors">
+        <label>
+          <span>Country</span>
+          <select class="country-select"></select>
+        </label>
+        <label>
+          <span>City</span>
+          <select class="city-select"></select>
+        </label>
+      </div>
+      <div class="time-display">
+        <div class="datetime"></div>
+        <div class="meta">
+          <span class="tz-name"></span>
+          <span class="tz-offset"></span>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="timezones.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
