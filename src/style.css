@@ -314,16 +314,6 @@ body {
   gap: 6px;
 }
 
-.selectors label {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .selectors select {
   background: var(--surface-2);
   color: var(--text);
@@ -341,23 +331,69 @@ body {
 
 .time-display {
   margin-top: 4px;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: var(--surface-2);
   border-radius: 8px;
   border: 1px solid var(--border);
 }
 
-.datetime {
+.time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.time-main {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 6px;
+  line-height: 1;
+}
+
+.time-hm {
   font-family: var(--mono);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.time-sec {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  padding-bottom: 3px;
+}
+
+.date-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.weekday {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+.date-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .meta {
-  margin-top: 4px;
+  margin-top: 8px;
   display: flex;
   justify-content: space-between;
   font-size: 11px;

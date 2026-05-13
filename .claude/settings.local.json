@@ -5,7 +5,10 @@
       "PowerShell(node --version)",
       "PowerShell(npm --version)",
       "PowerShell($paths = @\\(\"$env:USERPROFILE\\\\.cargo\\\\bin\\\\cargo.exe\", \"$env:USERPROFILE\\\\.cargo\\\\bin\\\\rustc.exe\", \"C:\\\\Users\\\\Administrator\\\\.cargo\\\\bin\\\\cargo.exe\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"FOUND: $p\" } else { Write-Output \"MISSING: $p\" } })",
-      "PowerShell($vsPaths = @\\(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\", \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\", \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\", \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Professional\"\\); foreach \\($p in $vsPaths\\) { if \\(Test-Path $p\\) { Write-Output \"FOUND: $p\" } }; $link = Get-Command link.exe -ErrorAction SilentlyContinue; if \\($link\\) { Write-Output \"link.exe on PATH: $\\($link.Source\\)\" } else { Write-Output \"link.exe NOT on PATH\" })"
+      "PowerShell($vsPaths = @\\(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\", \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\BuildTools\", \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\", \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Professional\"\\); foreach \\($p in $vsPaths\\) { if \\(Test-Path $p\\) { Write-Output \"FOUND: $p\" } }; $link = Get-Command link.exe -ErrorAction SilentlyContinue; if \\($link\\) { Write-Output \"link.exe on PATH: $\\($link.Source\\)\" } else { Write-Output \"link.exe NOT on PATH\" })",
+      "Bash(cargo --version)",
+      "Bash(where.exe cargo *)",
+      "Bash(where.exe rustc *)"
     ]
   }
 }

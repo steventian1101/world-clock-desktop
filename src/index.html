@@ -44,17 +44,20 @@
     <section class="clock-card">
       <button class="remove-btn" title="Remove this clock" aria-label="Remove clock">&times;</button>
       <div class="selectors">
-        <label>
-          <span>Country</span>
-          <select class="country-select"></select>
-        </label>
-        <label>
-          <span>City</span>
-          <select class="city-select"></select>
-        </label>
+        <select class="country-select" aria-label="Country"></select>
+        <select class="city-select" aria-label="City"></select>
       </div>
       <div class="time-display">
-        <div class="datetime"></div>
+        <div class="time-row">
+          <div class="time-main">
+            <span class="time-hm">00:00</span>
+            <span class="time-sec">00</span>
+          </div>
+          <div class="date-info">
+            <span class="weekday"></span>
+            <span class="date-num"></span>
+          </div>
+        </div>
         <div class="meta">
           <span class="tz-name"></span>
           <span class="tz-offset"></span>

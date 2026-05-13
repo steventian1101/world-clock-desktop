@@ -97,6 +97,7 @@ function getFormatter(tz, hour12) {
       key,
       new Intl.DateTimeFormat("en-US", {
         timeZone: tz,
+        weekday: "short",
         year: "numeric",
         month: "numeric",
         day: "numeric",
@@ -110,8 +111,19 @@ function getFormatter(tz, hour12) {
   return dateFmtCache.get(key);
 }
 
-function formatDateTime(date, tz, hour12) {
-  return getFormatter(tz, hour12).format(date).replace(",", "");
+function formatDateTimeParts(date, tz, hour12) {
+  const parts = getFormatter(tz, hour12).formatToParts(date);
+  const pick = (t) => parts.find((p) => p.type === t)?.value || "";
+  const hour = pick("hour");
+  const minute = pick("minute");
+  const second = pick("second");
+  const period = pick("dayPeriod");
+  return {
+    timeHM: `${hour}:${minute}`,
+    timeSec: hour12 && period ? `${second} ${period}` : second,
+    weekday: pick("weekday").toUpperCase(),
+    dateText: `${pick("month")}/${pick("day")}/${pick("year")}`
+  };
 }
 
 function getTzMeta(tz) {
@@ -284,7 +296,11 @@ function renderClock(clock) {
 function tickClock(node, clock) {
   const tz = resolveTimezone(clock);
   const now = new Date();
-  node.querySelector(".datetime").textContent = formatDateTime(now, tz, state.hour12);
+  const f = formatDateTimeParts(now, tz, state.hour12);
+  node.querySelector(".time-hm").textContent = f.timeHM;
+  node.querySelector(".time-sec").textContent = f.timeSec;
+  node.querySelector(".weekday").textContent = f.weekday;
+  node.querySelector(".date-num").textContent = f.dateText;
   const { abbr, offset } = getTzMeta(tz);
   const tzName = clock.country && clock.country !== "Local"
     ? `${clock.city || ""}${clock.city ? ", " : ""}${clock.country} · ${abbr || tz}`
