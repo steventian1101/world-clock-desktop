@@ -9,6 +9,10 @@
     "core:window:allow-set-always-on-top",
     "core:window:allow-close",
     "core:window:allow-start-dragging",
-    "window-state:default"
+    "core:window:allow-hide",
+    "core:window:allow-show",
+    "core:event:default",
+    "window-state:default",
+    "autostart:default"
   ]
 }

@@ -58,6 +58,7 @@ const $setShowSeconds = document.getElementById("setShowSeconds");
 const $setShowMeta = document.getElementById("setShowMeta");
 const $setScorpion = document.getElementById("setScorpion");
 const $setGreetings = document.getElementById("setGreetings");
+const $setAutostart = document.getElementById("setAutostart");
 const $mascot = document.getElementById("mascot");
 const $mascotBubble = document.getElementById("mascotBubble");
 const $scorpionGrid = document.getElementById("scorpionGrid");
@@ -105,6 +106,39 @@ async function setAlwaysOnTopNative(value) {
     if (w) await w.setAlwaysOnTop(!!value);
   } catch (e) {
     console.warn("setAlwaysOnTop failed:", e);
+  }
+}
+
+function tauriInvoke(cmd, args) {
+  const t = window.__TAURI__;
+  if (!t) return Promise.reject(new Error("Tauri not available"));
+  const invoke = (t.core && t.core.invoke) || t.invoke;
+  if (!invoke) return Promise.reject(new Error("invoke not available"));
+  return invoke(cmd, args);
+}
+
+function tauriListen(eventName, handler) {
+  const t = window.__TAURI__;
+  if (!t || !t.event || !t.event.listen) return Promise.resolve(() => {});
+  return t.event.listen(eventName, handler);
+}
+
+async function isAutostartEnabled() {
+  try {
+    return !!(await tauriInvoke("plugin:autostart|is_enabled"));
+  } catch (e) {
+    console.warn("autostart:is_enabled failed", e);
+    return false;
+  }
+}
+
+async function setAutostartEnabled(enabled) {
+  try {
+    await tauriInvoke(enabled ? "plugin:autostart|enable" : "plugin:autostart|disable");
+    return true;
+  } catch (e) {
+    console.warn("autostart toggle failed", e);
+    return false;
   }
 }
 
@@ -1156,6 +1190,18 @@ $setGreetings.addEventListener("change", () => {
   state.settings.greetingsEnabled = $setGreetings.checked;
   persistSettings();
 });
+if ($setAutostart) {
+  $setAutostart.addEventListener("change", async () => {
+    const wanted = $setAutostart.checked;
+    const ok = await setAutostartEnabled(wanted);
+    if (!ok) {
+      $setAutostart.checked = !wanted;
+      return;
+    }
+    const actual = await isAutostartEnabled();
+    $setAutostart.checked = actual;
+  });
+}
 if ($setBlendMinutes) {
   $setBlendMinutes.addEventListener("input", () => {
     const v = Number($setBlendMinutes.value);
@@ -1177,3 +1223,13 @@ loadState();
 tickAll();
 setInterval(tickAll, 1000);
 startMascot();
+
+(async () => {
+  if ($setAutostart) {
+    $setAutostart.checked = await isAutostartEnabled();
+  }
+  tauriListen("tray://open-settings", () => openSettings());
+  tauriListen("tray://autostart-changed", (e) => {
+    if ($setAutostart) $setAutostart.checked = !!e.payload;
+  });
+})();

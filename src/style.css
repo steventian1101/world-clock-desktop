@@ -819,6 +819,13 @@ body[data-theme="dark"] .danger-btn:hover {
   text-transform: uppercase;
 }
 
+.settings-hint {
+  margin: 2px 2px 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 .swatch-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
