@@ -2,17 +2,31 @@ const STORAGE = {
   clocks: "wc_clocks",
   theme: "wc_theme",
   pinned: "wc_pinned",
-  hour12: "wc_hour12"
+  hour12: "wc_hour12",
+  settings: "wc_settings"
 };
 
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const DEFAULT_SETTINGS = {
+  fontFamily: "system",
+  fontSize: "medium",
+  dateFormat: "MDY",
+  showSeconds: true,
+  showMeta: true,
+  scorpionEnabled: true,
+  greetingsEnabled: true,
+  scorpionModel: "classic",
+  scorpionColor: "accent"
+};
 
 const state = {
   clocks: [],
   theme: "light",
   pinned: false,
   hour12: true,
-  dirty: false
+  dirty: false,
+  settings: { ...DEFAULT_SETTINGS }
 };
 
 const $list = document.getElementById("clockList");
@@ -23,6 +37,22 @@ const $themeIcon = document.getElementById("themeIcon");
 const $pinBtn = document.getElementById("pinBtn");
 const $hourBtn = document.getElementById("hourFormatBtn");
 const $hourLabel = document.getElementById("hourFormatLabel");
+const $settingsBtn = document.getElementById("settingsBtn");
+const $settingsPanel = document.getElementById("settingsPanel");
+const $settingsBackdrop = document.getElementById("settingsBackdrop");
+const $settingsClose = document.getElementById("settingsClose");
+const $settingsSaveBtn = document.getElementById("settingsSaveBtn");
+const $setFontFamily = document.getElementById("setFontFamily");
+const $setFontSize = document.getElementById("setFontSize");
+const $setDateFormat = document.getElementById("setDateFormat");
+const $setShowSeconds = document.getElementById("setShowSeconds");
+const $setShowMeta = document.getElementById("setShowMeta");
+const $setScorpion = document.getElementById("setScorpion");
+const $setGreetings = document.getElementById("setGreetings");
+const $mascot = document.getElementById("mascot");
+const $mascotBubble = document.getElementById("mascotBubble");
+const $scorpionGrid = document.getElementById("scorpionGrid");
+const $colorGrid = document.getElementById("colorGrid");
 const $status = document.getElementById("statusText");
 const $tpl = document.getElementById("clockTemplate");
 const $search = document.getElementById("globalSearch");
@@ -118,11 +148,20 @@ function formatDateTimeParts(date, tz, hour12) {
   const minute = pick("minute");
   const second = pick("second");
   const period = pick("dayPeriod");
+  const m = pick("month");
+  const d = pick("day");
+  const y = pick("year");
+  let dateText;
+  switch (state.settings.dateFormat) {
+    case "DMY": dateText = `${d}/${m}/${y}`; break;
+    case "YMD": dateText = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`; break;
+    default: dateText = `${m}/${d}/${y}`;
+  }
   return {
     timeHM: `${hour}:${minute}`,
     timeSec: hour12 && period ? `${second} ${period}` : second,
     weekday: pick("weekday").toUpperCase(),
-    dateText: `${pick("month")}/${pick("day")}/${pick("year")}`
+    dateText
   };
 }
 
@@ -289,8 +328,104 @@ function renderClock(clock) {
     markDirty();
   });
 
+  attachCardDnD(node, clock);
+
   $list.appendChild(node);
   tickClock(node, clock);
+}
+
+let dragSrcId = null;
+
+function clearDropTargets() {
+  $list.querySelectorAll(".drop-above, .drop-below").forEach((el) => {
+    el.classList.remove("drop-above", "drop-below");
+  });
+}
+
+function attachCardDnD(node, clock) {
+  const handle = node.querySelector(".drag-handle");
+
+  const disarm = () => node.setAttribute("draggable", "false");
+  handle.addEventListener("mousedown", () => {
+    node.setAttribute("draggable", "true");
+  });
+  handle.addEventListener("mouseup", disarm);
+
+  node.addEventListener("dragstart", (e) => {
+    if (node.getAttribute("draggable") !== "true") {
+      e.preventDefault();
+      return;
+    }
+    dragSrcId = clock.id;
+    node.classList.add("dragging");
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", clock.id); } catch (_) {}
+    }
+  });
+
+  node.addEventListener("dragend", () => {
+    dragSrcId = null;
+    node.classList.remove("dragging");
+    disarm();
+    clearDropTargets();
+  });
+
+  node.addEventListener("dragenter", (e) => {
+    if (!dragSrcId || dragSrcId === clock.id) return;
+    e.preventDefault();
+  });
+
+  node.addEventListener("dragover", (e) => {
+    if (!dragSrcId || dragSrcId === clock.id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    const rect = node.getBoundingClientRect();
+    const before = e.clientY - rect.top < rect.height / 2;
+    if (before) {
+      if (!node.classList.contains("drop-above")) {
+        clearDropTargets();
+        node.classList.add("drop-above");
+      }
+    } else {
+      if (!node.classList.contains("drop-below")) {
+        clearDropTargets();
+        node.classList.add("drop-below");
+      }
+    }
+  });
+
+  node.addEventListener("drop", (e) => {
+    if (!dragSrcId || dragSrcId === clock.id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = node.getBoundingClientRect();
+    const before = e.clientY - rect.top < rect.height / 2;
+    clearDropTargets();
+    reorderClocks(dragSrcId, clock.id, before);
+  });
+}
+
+function reorderClocks(srcId, dstId, before) {
+  const srcIdx = state.clocks.findIndex((c) => c.id === srcId);
+  if (srcIdx === -1) return;
+  const [moved] = state.clocks.splice(srcIdx, 1);
+  const dstIdx = state.clocks.findIndex((c) => c.id === dstId);
+  if (dstIdx === -1) {
+    state.clocks.splice(srcIdx, 0, moved);
+    return;
+  }
+  const insertAt = before ? dstIdx : dstIdx + 1;
+  state.clocks.splice(insertAt, 0, moved);
+
+  const srcNode = $list.querySelector(`[data-id="${srcId}"]`);
+  const dstNode = $list.querySelector(`[data-id="${dstId}"]`);
+  if (srcNode && dstNode) {
+    if (before) $list.insertBefore(srcNode, dstNode);
+    else $list.insertBefore(srcNode, dstNode.nextSibling);
+  }
+  markDirty();
 }
 
 function tickClock(node, clock) {
@@ -501,12 +636,20 @@ function loadState() {
     STORAGE.clocks,
     STORAGE.theme,
     STORAGE.pinned,
-    STORAGE.hour12
+    STORAGE.hour12,
+    STORAGE.settings
   ]);
 
   applyTheme(data[STORAGE.theme] === "dark" ? "dark" : "light");
   applyPinned(data[STORAGE.pinned] === true);
   applyHour12(data[STORAGE.hour12] !== false);
+
+  const savedSettings = data[STORAGE.settings] && typeof data[STORAGE.settings] === "object"
+    ? data[STORAGE.settings]
+    : {};
+  state.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
+  applySettings();
+  syncSettingsUI();
 
   const saved = Array.isArray(data[STORAGE.clocks]) ? data[STORAGE.clocks] : null;
   if (saved && saved.length) {
@@ -531,10 +674,208 @@ function saveState() {
     })),
     [STORAGE.theme]: state.theme,
     [STORAGE.pinned]: state.pinned,
-    [STORAGE.hour12]: state.hour12
+    [STORAGE.hour12]: state.hour12,
+    [STORAGE.settings]: state.settings
   });
   clearDirty();
 }
+
+function applySettings() {
+  const s = state.settings;
+  document.documentElement.dataset.font = s.fontFamily;
+  document.documentElement.dataset.size = s.fontSize;
+  document.body.classList.toggle("hide-seconds", !s.showSeconds);
+  document.body.classList.toggle("hide-meta", !s.showMeta);
+  document.body.classList.toggle("mascot-on", !!s.scorpionEnabled);
+  if ($mascot) {
+    $mascot.hidden = !s.scorpionEnabled;
+    if (!s.scorpionEnabled) hideBubble();
+  }
+  applyScorpionModel(s.scorpionModel);
+  applyScorpionColor(s.scorpionColor);
+  dateFmtCache.clear();
+  tickAll();
+}
+
+function applyScorpionModel(modelId) {
+  const models = window.SCORPION_MODELS || [];
+  const model = models.find((m) => m.id === modelId) || models[0];
+  if (!model) return;
+  document.querySelectorAll(".brand-icon, .mascot-sprite svg").forEach((svg) => {
+    svg.innerHTML = model.svg;
+  });
+}
+
+function applyScorpionColor(colorId) {
+  const colors = window.SCORPION_COLORS || [];
+  const color = colors.find((c) => c.id === colorId);
+  if (!color || !color.value) {
+    document.documentElement.style.removeProperty("--scorpion-color");
+  } else {
+    document.documentElement.style.setProperty("--scorpion-color", color.value);
+  }
+}
+
+function buildScorpionGrid() {
+  if (!$scorpionGrid || !window.SCORPION_MODELS) return;
+  $scorpionGrid.innerHTML = "";
+  for (const model of window.SCORPION_MODELS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "scorpion-swatch";
+    btn.dataset.id = model.id;
+    btn.title = model.name;
+    btn.innerHTML =
+      '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      model.svg +
+      "</svg>";
+    btn.addEventListener("click", () => {
+      state.settings.scorpionModel = model.id;
+      applyScorpionModel(model.id);
+      syncSwatchSelection();
+      persistSettings();
+    });
+    $scorpionGrid.appendChild(btn);
+  }
+}
+
+function buildColorGrid() {
+  if (!$colorGrid || !window.SCORPION_COLORS) return;
+  $colorGrid.innerHTML = "";
+  for (const c of window.SCORPION_COLORS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "color-swatch";
+    btn.dataset.id = c.id;
+    btn.title = c.name;
+    if (c.value) {
+      btn.style.background = c.value;
+    } else {
+      btn.classList.add("color-accent");
+    }
+    btn.addEventListener("click", () => {
+      state.settings.scorpionColor = c.id;
+      applyScorpionColor(c.id);
+      syncSwatchSelection();
+      persistSettings();
+    });
+    $colorGrid.appendChild(btn);
+  }
+}
+
+function syncSwatchSelection() {
+  document.querySelectorAll(".scorpion-swatch").forEach((b) => {
+    b.classList.toggle("selected", b.dataset.id === state.settings.scorpionModel);
+  });
+  document.querySelectorAll(".color-swatch").forEach((b) => {
+    b.classList.toggle("selected", b.dataset.id === state.settings.scorpionColor);
+  });
+}
+
+function syncSettingsUI() {
+  const s = state.settings;
+  $setFontFamily.value = s.fontFamily;
+  $setFontSize.value = s.fontSize;
+  $setDateFormat.value = s.dateFormat;
+  $setShowSeconds.checked = s.showSeconds;
+  $setShowMeta.checked = s.showMeta;
+  $setScorpion.checked = s.scorpionEnabled;
+  $setGreetings.checked = s.greetingsEnabled;
+  syncSwatchSelection();
+}
+
+function persistSettings() {
+  storage.set({ [STORAGE.settings]: state.settings });
+}
+
+function openSettings() {
+  syncSettingsUI();
+  $settingsPanel.hidden = false;
+  $settingsBackdrop.hidden = false;
+  $settingsPanel.setAttribute("aria-hidden", "false");
+}
+
+function closeSettings() {
+  $settingsPanel.hidden = true;
+  $settingsBackdrop.hidden = true;
+  $settingsPanel.setAttribute("aria-hidden", "true");
+}
+
+const GREETINGS = [
+  "Hello!", "Hi!", "Hey!", "Howdy!", "Hola!", "Ciao!", "Bonjour!",
+  "Tick tock!", "What time is it?", "Have a nice day!", "Cheers!",
+  "Stay sharp!", "Don't be late!", "Time flies!", "Click click!"
+];
+
+let mascotX = 20;
+let mascotDir = 1;
+const MASCOT_SPEED = 0.5;
+const MASCOT_WIDTH = 44;
+let mascotLastGreet = 0;
+let mascotBubbleTimer = null;
+let mascotLastFrame = 0;
+let mascotRunning = false;
+
+function showBubble(text) {
+  if (!$mascotBubble) return;
+  $mascotBubble.textContent = text;
+  $mascotBubble.hidden = false;
+  clearTimeout(mascotBubbleTimer);
+  mascotBubbleTimer = setTimeout(hideBubble, 2400);
+}
+
+function hideBubble() {
+  if (!$mascotBubble) return;
+  $mascotBubble.hidden = true;
+  clearTimeout(mascotBubbleTimer);
+}
+
+function mascotFrame(ts) {
+  if (!state.settings.scorpionEnabled) {
+    mascotLastFrame = 0;
+    mascotRunning = false;
+    return;
+  }
+  if (!mascotLastFrame) mascotLastFrame = ts;
+  const dt = Math.min(48, ts - mascotLastFrame);
+  mascotLastFrame = ts;
+
+  const footer = document.querySelector(".app-footer");
+  const max = (footer ? footer.clientWidth : window.innerWidth) - MASCOT_WIDTH - 8;
+  mascotX += MASCOT_SPEED * mascotDir * (dt / 16.67);
+  if (mascotX >= max) { mascotX = max; mascotDir = -1; }
+  else if (mascotX <= 4) { mascotX = 4; mascotDir = 1; }
+
+  const bob = Math.sin(ts / 110) * 1.2;
+  const flip = mascotDir === 1 ? -1 : 1;
+  $mascot.style.transform = `translate(${mascotX}px, ${bob}px) scaleX(${flip})`;
+  if ($mascotBubble && !$mascotBubble.hidden) {
+    $mascotBubble.style.transform = `translateX(-50%) scaleX(${flip})`;
+  }
+
+  if (state.settings.greetingsEnabled) {
+    if (!mascotLastGreet) mascotLastGreet = ts + 4000;
+    if (ts >= mascotLastGreet) {
+      const g = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+      showBubble(g);
+      mascotLastGreet = ts + 6000 + Math.random() * 9000;
+    }
+  } else {
+    hideBubble();
+    mascotLastGreet = 0;
+  }
+
+  requestAnimationFrame(mascotFrame);
+}
+
+function startMascot() {
+  if (mascotRunning) return;
+  if (!state.settings.scorpionEnabled) return;
+  mascotRunning = true;
+  mascotLastFrame = 0;
+  requestAnimationFrame(mascotFrame);
+}
+
 
 $addBtn.addEventListener("click", addClock);
 $saveBtn.addEventListener("click", saveState);
@@ -557,7 +898,58 @@ $hourBtn.addEventListener("click", () => {
   storage.set({ [STORAGE.hour12]: next });
 });
 
+$settingsBtn.addEventListener("click", openSettings);
+$settingsClose.addEventListener("click", closeSettings);
+$settingsBackdrop.addEventListener("click", closeSettings);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$settingsPanel.hidden) closeSettings();
+});
+
+$setFontFamily.addEventListener("change", () => {
+  state.settings.fontFamily = $setFontFamily.value;
+  applySettings();
+  persistSettings();
+});
+$setFontSize.addEventListener("change", () => {
+  state.settings.fontSize = $setFontSize.value;
+  applySettings();
+  persistSettings();
+});
+$setDateFormat.addEventListener("change", () => {
+  state.settings.dateFormat = $setDateFormat.value;
+  applySettings();
+  persistSettings();
+});
+$setShowSeconds.addEventListener("change", () => {
+  state.settings.showSeconds = $setShowSeconds.checked;
+  applySettings();
+  persistSettings();
+});
+$setShowMeta.addEventListener("change", () => {
+  state.settings.showMeta = $setShowMeta.checked;
+  applySettings();
+  persistSettings();
+});
+$setScorpion.addEventListener("change", () => {
+  state.settings.scorpionEnabled = $setScorpion.checked;
+  applySettings();
+  persistSettings();
+  if (state.settings.scorpionEnabled) startMascot();
+});
+$setGreetings.addEventListener("change", () => {
+  state.settings.greetingsEnabled = $setGreetings.checked;
+  persistSettings();
+});
+
+$settingsSaveBtn.addEventListener("click", () => {
+  saveState();
+  closeSettings();
+});
+
 initGlobalSearch();
+buildScorpionGrid();
+buildColorGrid();
 loadState();
 tickAll();
 setInterval(tickAll, 1000);
+startMascot();

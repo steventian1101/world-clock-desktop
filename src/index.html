@@ -8,9 +8,25 @@
 </head>
 <body data-theme="light">
   <header class="app-header">
-    <div class="title-row">
-      <span class="logo" aria-hidden="true">&#9201;</span>
-      <h1>World Clock</h1>
+    <div class="title-row" data-tauri-drag-region>
+      <div class="brand" data-tauri-drag-region>
+        <svg class="brand-icon" data-tauri-drag-region viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g fill="currentColor">
+            <ellipse cx="30" cy="36" rx="11" ry="5"/>
+            <circle cx="18" cy="36" r="5"/>
+            <path d="M14 32 Q6 26 2 22 L4 27 L10 30 L4 30 L8 34 L14 34 Z"/>
+            <path d="M14 40 Q6 46 2 50 L4 45 L10 42 L4 42 L8 38 L14 38 Z"/>
+            <rect x="20" y="40" width="2.4" height="9" rx="1.2"/>
+            <rect x="26" y="40" width="2.4" height="11" rx="1.2"/>
+            <rect x="32" y="40" width="2.4" height="11" rx="1.2"/>
+            <rect x="38" y="40" width="2.4" height="9" rx="1.2"/>
+            <path d="M41 36 Q52 35 55 25 Q58 13 49 8 L46 13 Q53 16 52 24 Q51 30 41 32 Z"/>
+            <path d="M49 8 L56 2 L52 11 Z"/>
+          </g>
+        </svg>
+        <span class="brand-name" data-tauri-drag-region>Scorpio<span class="brand-accent">N</span></span>
+      </div>
+      <div class="drag-spacer" data-tauri-drag-region aria-hidden="true"></div>
       <div class="header-actions">
         <button id="hourFormatBtn" class="icon-btn" title="Toggle 12/24-hour format" aria-label="Toggle hour format">
           <span id="hourFormatLabel">12h</span>
@@ -21,6 +37,12 @@
         <button id="pinBtn" class="icon-btn pinned" title="Pin window (always on top)" aria-label="Toggle always on top">
           <span id="pinIcon">&#128204;</span>
         </button>
+        <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Open settings">
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="add-row">
@@ -30,6 +52,13 @@
         <ul id="globalSearchResults" class="search-results" role="listbox" hidden></ul>
       </div>
       <button id="addBtn" class="primary-btn add-plus" title="Add selected as new clock" aria-label="Add clock">+</button>
+      <button id="saveBtn" class="primary-btn save-icon-btn" title="Save changes" aria-label="Save">
+        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -37,11 +66,96 @@
 
   <footer class="app-footer">
     <span id="statusText" class="status"></span>
-    <button id="saveBtn" class="primary-btn footer-btn save-btn">Save</button>
+    <div id="mascot" class="mascot" aria-hidden="true">
+      <div class="mascot-bubble" id="mascotBubble" hidden></div>
+      <div class="mascot-sprite">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g fill="currentColor">
+            <ellipse cx="30" cy="36" rx="11" ry="5"/>
+            <circle cx="18" cy="36" r="5"/>
+            <path d="M14 32 Q6 26 2 22 L4 27 L10 30 L4 30 L8 34 L14 34 Z"/>
+            <path d="M14 40 Q6 46 2 50 L4 45 L10 42 L4 42 L8 38 L14 38 Z"/>
+            <rect x="20" y="40" width="2.4" height="9" rx="1.2" class="leg leg-a"/>
+            <rect x="26" y="40" width="2.4" height="11" rx="1.2" class="leg leg-b"/>
+            <rect x="32" y="40" width="2.4" height="11" rx="1.2" class="leg leg-c"/>
+            <rect x="38" y="40" width="2.4" height="9" rx="1.2" class="leg leg-d"/>
+            <path d="M41 36 Q52 35 55 25 Q58 13 49 8 L46 13 Q53 16 52 24 Q51 30 41 32 Z"/>
+            <path d="M49 8 L56 2 L52 11 Z"/>
+          </g>
+        </svg>
+      </div>
+    </div>
   </footer>
+
+  <div id="settingsBackdrop" class="settings-backdrop" hidden></div>
+  <aside id="settingsPanel" class="settings-panel" hidden aria-hidden="true" role="dialog" aria-label="Settings">
+    <header class="settings-head">
+      <h2>Settings</h2>
+      <button id="settingsClose" class="icon-btn" title="Close settings" aria-label="Close settings">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </header>
+    <div class="settings-body">
+      <label class="settings-row">
+        <span>Font family</span>
+        <select id="setFontFamily">
+          <option value="system">System</option>
+          <option value="mono">Monospace</option>
+          <option value="serif">Serif</option>
+          <option value="rounded">Rounded</option>
+        </select>
+      </label>
+      <label class="settings-row">
+        <span>Font size</span>
+        <select id="setFontSize">
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </label>
+      <label class="settings-row">
+        <span>Date format</span>
+        <select id="setDateFormat">
+          <option value="MDY">M/D/YYYY</option>
+          <option value="DMY">D/M/YYYY</option>
+          <option value="YMD">YYYY-MM-DD</option>
+        </select>
+      </label>
+      <label class="settings-row settings-check">
+        <span>Show seconds</span>
+        <input type="checkbox" id="setShowSeconds">
+      </label>
+      <label class="settings-row settings-check">
+        <span>Show timezone meta</span>
+        <input type="checkbox" id="setShowMeta">
+      </label>
+      <label class="settings-row settings-check">
+        <span>Walking scorpion mascot</span>
+        <input type="checkbox" id="setScorpion">
+      </label>
+      <label class="settings-row settings-check">
+        <span>Mascot greetings</span>
+        <input type="checkbox" id="setGreetings">
+      </label>
+      <div class="settings-block">
+        <div class="settings-block-label">Scorpion model</div>
+        <div class="swatch-grid" id="scorpionGrid"></div>
+      </div>
+      <div class="settings-block">
+        <div class="settings-block-label">Scorpion color</div>
+        <div class="swatch-grid color-grid" id="colorGrid"></div>
+      </div>
+    </div>
+    <footer class="settings-foot">
+      <button id="settingsSaveBtn" class="primary-btn" title="Save and close">Save</button>
+    </footer>
+  </aside>
 
   <template id="clockTemplate">
     <section class="clock-card">
+      <button class="drag-handle" type="button" title="Drag to reorder" aria-label="Drag to reorder">
+        <span aria-hidden="true">&#10303;</span>
+      </button>
       <button class="remove-btn" title="Remove this clock" aria-label="Remove clock">&times;</button>
       <div class="selectors">
         <select class="country-select" aria-label="Country"></select>
@@ -67,6 +181,7 @@
   </template>
 
   <script src="timezones.js"></script>
+  <script src="scorpions.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
