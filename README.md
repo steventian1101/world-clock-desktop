@@ -88,8 +88,11 @@ Colors blend smoothly across each boundary using a configurable transition windo
 Open **Settings → Time-of-day indicator**. Each row has:
 
 - a label (free text, just for your reference)
-- a start time (`<input type="time">`) — the band runs until the next band's start
+- a start time in 24-hour format (`HH:MM`) — the band runs until the next band's start
 - a color picker
+
+The time picker is locked to 24-hour format regardless of your Windows regional
+settings, and its clock indicator follows the active dark/light theme.
 
 Changes apply live to all clocks and are persisted to `localStorage`. The
 **Gradient transition (min)** field controls how wide the blend window is; set it to

@@ -911,6 +911,8 @@ function buildTimeBandsList() {
     const startInput = document.createElement("input");
     startInput.type = "time";
     startInput.className = "band-start";
+    startInput.lang = "en-GB";
+    startInput.step = 60;
     startInput.value = band.startTime || "00:00";
 
     const colorInput = document.createElement("input");
