@@ -64,6 +64,37 @@ on the next reload.
 All other features (dark/light theme, 12h/24h, multiple clocks, country/city search, the
 283-city dataset, manual Save button) are unchanged.
 
+## Time-of-day indicator
+
+Each clock card shows a small colored dot to the left of the time that reflects how
+"comfortable" the current hour is in that timezone. The color is computed from the
+clock's *local* time (not your machine's), so a 22:00 → 06:00 night band lights up the
+Tokyo card red while London still shows green.
+
+Defaults match a normal day:
+
+| Time range (local) | Color  |
+| ---                | ---    |
+| 09:00 → 19:00      | green  |
+| 19:00 → 22:00      | yellow |
+| 22:00 → 06:00      | red    |
+| 06:00 → 09:00      | yellow |
+
+Colors blend smoothly across each boundary using a configurable transition window
+(default ±30 min around the boundary).
+
+### Customizing bands
+
+Open **Settings → Time-of-day indicator**. Each row has:
+
+- a label (free text, just for your reference)
+- a start time (`<input type="time">`) — the band runs until the next band's start
+- a color picker
+
+Changes apply live to all clocks and are persisted to `localStorage`. The
+**Gradient transition (min)** field controls how wide the blend window is; set it to
+`0` for hard color switches.
+
 ## Project layout
 
 ```
@@ -73,6 +104,7 @@ clock-desktop/
 │   ├── index.html
 │   ├── style.css
 │   ├── app.js
+│   ├── scorpions.js         # mascot SVG models + color presets
 │   └── timezones.js
 └── src-tauri/                # native shell
     ├── Cargo.toml

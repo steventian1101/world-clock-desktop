@@ -138,6 +138,14 @@
         <input type="checkbox" id="setGreetings">
       </label>
       <div class="settings-block">
+        <div class="settings-block-label">Time-of-day indicator</div>
+        <div class="time-bands-list" id="timeBandsList"></div>
+        <label class="settings-row">
+          <span>Gradient transition (min)</span>
+          <input type="number" id="setBlendMinutes" min="0" max="180" step="5" />
+        </label>
+      </div>
+      <div class="settings-block">
         <div class="settings-block-label">Scorpion model</div>
         <div class="swatch-grid" id="scorpionGrid"></div>
       </div>
@@ -164,6 +172,7 @@
       <div class="time-display">
         <div class="time-row">
           <div class="time-main">
+            <span class="time-status-dot" aria-hidden="true"></span>
             <span class="time-hm">00:00</span>
             <span class="time-sec">00</span>
           </div>

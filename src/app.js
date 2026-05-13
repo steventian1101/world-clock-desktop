@@ -8,6 +8,13 @@ const STORAGE = {
 
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+const DEFAULT_TIME_BANDS = [
+  { name: "Day",     startTime: "09:00", color: "#22c55e" },
+  { name: "Evening", startTime: "19:00", color: "#eab308" },
+  { name: "Night",   startTime: "22:00", color: "#ef4444" },
+  { name: "Morning", startTime: "06:00", color: "#eab308" }
+];
+
 const DEFAULT_SETTINGS = {
   fontFamily: "system",
   fontSize: "medium",
@@ -17,7 +24,9 @@ const DEFAULT_SETTINGS = {
   scorpionEnabled: true,
   greetingsEnabled: true,
   scorpionModel: "classic",
-  scorpionColor: "accent"
+  scorpionColor: "accent",
+  timeBands: DEFAULT_TIME_BANDS.map((b) => ({ ...b })),
+  blendMinutes: 30
 };
 
 const state = {
@@ -53,6 +62,8 @@ const $mascot = document.getElementById("mascot");
 const $mascotBubble = document.getElementById("mascotBubble");
 const $scorpionGrid = document.getElementById("scorpionGrid");
 const $colorGrid = document.getElementById("colorGrid");
+const $timeBandsList = document.getElementById("timeBandsList");
+const $setBlendMinutes = document.getElementById("setBlendMinutes");
 const $status = document.getElementById("statusText");
 const $tpl = document.getElementById("clockTemplate");
 const $search = document.getElementById("globalSearch");
@@ -428,6 +439,104 @@ function reorderClocks(srcId, dstId, before) {
   markDirty();
 }
 
+const tzHourFmtCache = new Map();
+function getTzHourFormatter(tz) {
+  if (!tzHourFmtCache.has(tz)) {
+    tzHourFmtCache.set(tz, new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }));
+  }
+  return tzHourFmtCache.get(tz);
+}
+
+function getZonedHMS(tz, date) {
+  const parts = getTzHourFormatter(tz).formatToParts(date);
+  const num = (t) => Number(parts.find((p) => p.type === t)?.value || 0);
+  let h = num("hour");
+  if (h === 24) h = 0;
+  return { h, m: num("minute"), s: num("second") };
+}
+
+function parseHexColor(hex) {
+  if (typeof hex !== "string") return { r: 0, g: 0, b: 0 };
+  let h = hex.trim().replace(/^#/, "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return { r: 0, g: 0, b: 0 };
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16)
+  };
+}
+
+function rgbToHex(r, g, b) {
+  const c = (n) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
+  return "#" + c(r) + c(g) + c(b);
+}
+
+function blendColors(a, b, t) {
+  const A = parseHexColor(a);
+  const B = parseHexColor(b);
+  return rgbToHex(
+    A.r + (B.r - A.r) * t,
+    A.g + (B.g - A.g) * t,
+    A.b + (B.b - A.b) * t
+  );
+}
+
+function timeStringToMinutes(s) {
+  if (typeof s !== "string") return 0;
+  const [h, m] = s.split(":").map(Number);
+  const hh = Number.isFinite(h) ? ((h % 24) + 24) % 24 : 0;
+  const mm = Number.isFinite(m) ? Math.max(0, Math.min(59, m)) : 0;
+  return hh * 60 + mm;
+}
+
+function getTimeOfDayColor(h, m, s) {
+  const bands = Array.isArray(state.settings.timeBands) ? state.settings.timeBands : [];
+  if (!bands.length) return null;
+  const blend = Math.max(0, Number(state.settings.blendMinutes) || 0);
+  const t = h * 60 + m + (s || 0) / 60;
+
+  const sorted = bands
+    .map((b) => ({ color: b.color || "#888888", startMin: timeStringToMinutes(b.startTime) }))
+    .sort((a, b) => a.startMin - b.startMin);
+
+  let currIdx = sorted.length - 1;
+  for (let i = 0; i < sorted.length; i++) {
+    const s1 = sorted[i].startMin;
+    const s2 = sorted[(i + 1) % sorted.length].startMin;
+    if (s1 < s2) {
+      if (t >= s1 && t < s2) { currIdx = i; break; }
+    } else {
+      if (t >= s1 || t < s2) { currIdx = i; break; }
+    }
+  }
+
+  const curr = sorted[currIdx];
+  const next = sorted[(currIdx + 1) % sorted.length];
+  const prev = sorted[(currIdx - 1 + sorted.length) % sorted.length];
+
+  let distToNext = next.startMin - t;
+  if (distToNext < 0) distToNext += 1440;
+  let distFromPrev = t - curr.startMin;
+  if (distFromPrev < 0) distFromPrev += 1440;
+
+  if (blend > 0 && distToNext < blend) {
+    const ratio = 0.5 * (1 - distToNext / blend);
+    return blendColors(curr.color, next.color, ratio);
+  }
+  if (blend > 0 && distFromPrev < blend) {
+    const ratio = 0.5 + 0.5 * (distFromPrev / blend);
+    return blendColors(prev.color, curr.color, ratio);
+  }
+  return curr.color;
+}
+
 function tickClock(node, clock) {
   const tz = resolveTimezone(clock);
   const now = new Date();
@@ -442,6 +551,18 @@ function tickClock(node, clock) {
     : `Local · ${abbr || tz}`;
   node.querySelector(".tz-name").textContent = tzName;
   node.querySelector(".tz-offset").textContent = offset;
+
+  const dot = node.querySelector(".time-status-dot");
+  if (dot) {
+    const { h, m, s } = getZonedHMS(tz, now);
+    const color = getTimeOfDayColor(h, m, s);
+    if (color) {
+      dot.style.color = color;
+      dot.hidden = false;
+    } else {
+      dot.hidden = true;
+    }
+  }
 }
 
 function tickAll() {
@@ -648,6 +769,16 @@ function loadState() {
     ? data[STORAGE.settings]
     : {};
   state.settings = { ...DEFAULT_SETTINGS, ...savedSettings };
+  if (!Array.isArray(state.settings.timeBands) || !state.settings.timeBands.length) {
+    state.settings.timeBands = DEFAULT_TIME_BANDS.map((b) => ({ ...b }));
+  } else {
+    state.settings.timeBands = state.settings.timeBands.map((b) => ({
+      name: typeof b.name === "string" ? b.name : "",
+      startTime: typeof b.startTime === "string" ? b.startTime : "00:00",
+      color: typeof b.color === "string" ? b.color : "#888888"
+    }));
+  }
+  if (!Number.isFinite(state.settings.blendMinutes)) state.settings.blendMinutes = 30;
   applySettings();
   syncSettingsUI();
 
@@ -763,6 +894,52 @@ function buildColorGrid() {
   }
 }
 
+function buildTimeBandsList() {
+  if (!$timeBandsList) return;
+  $timeBandsList.innerHTML = "";
+  const bands = state.settings.timeBands || [];
+  bands.forEach((band, idx) => {
+    const row = document.createElement("div");
+    row.className = "time-band-row";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "band-name";
+    nameInput.value = band.name || "";
+    nameInput.placeholder = "Label";
+
+    const startInput = document.createElement("input");
+    startInput.type = "time";
+    startInput.className = "band-start";
+    startInput.value = band.startTime || "00:00";
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.className = "band-color";
+    colorInput.value = band.color || "#888888";
+
+    nameInput.addEventListener("change", () => {
+      state.settings.timeBands[idx].name = nameInput.value;
+      persistSettings();
+    });
+    startInput.addEventListener("change", () => {
+      state.settings.timeBands[idx].startTime = startInput.value || "00:00";
+      tickAll();
+      persistSettings();
+    });
+    colorInput.addEventListener("input", () => {
+      state.settings.timeBands[idx].color = colorInput.value;
+      tickAll();
+      persistSettings();
+    });
+
+    row.appendChild(nameInput);
+    row.appendChild(startInput);
+    row.appendChild(colorInput);
+    $timeBandsList.appendChild(row);
+  });
+}
+
 function syncSwatchSelection() {
   document.querySelectorAll(".scorpion-swatch").forEach((b) => {
     b.classList.toggle("selected", b.dataset.id === state.settings.scorpionModel);
@@ -781,6 +958,8 @@ function syncSettingsUI() {
   $setShowMeta.checked = s.showMeta;
   $setScorpion.checked = s.scorpionEnabled;
   $setGreetings.checked = s.greetingsEnabled;
+  if ($setBlendMinutes) $setBlendMinutes.value = s.blendMinutes;
+  buildTimeBandsList();
   syncSwatchSelection();
 }
 
@@ -940,6 +1119,14 @@ $setGreetings.addEventListener("change", () => {
   state.settings.greetingsEnabled = $setGreetings.checked;
   persistSettings();
 });
+if ($setBlendMinutes) {
+  $setBlendMinutes.addEventListener("input", () => {
+    const v = Number($setBlendMinutes.value);
+    state.settings.blendMinutes = Number.isFinite(v) && v >= 0 ? v : 0;
+    tickAll();
+    persistSettings();
+  });
+}
 
 $settingsSaveBtn.addEventListener("click", () => {
   saveState();

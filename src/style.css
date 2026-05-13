@@ -460,6 +460,19 @@ body {
   line-height: 1;
 }
 
+.time-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  color: var(--text-muted);
+  align-self: center;
+  margin: 0 4px 10px 0;
+  box-shadow: 0 0 6px currentColor, 0 0 1px rgba(0, 0, 0, 0.25) inset;
+  transition: color 0.8s ease, box-shadow 0.8s ease;
+  flex: 0 0 auto;
+}
+
 .time-hm {
   font-family: var(--mono);
   font-size: 2.71rem;
@@ -848,6 +861,82 @@ body[data-theme="dark"] .danger-btn:hover {
 
 .color-grid {
   grid-template-columns: repeat(6, 1fr);
+}
+
+.time-bands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.time-band-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.time-band-row .band-name {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.86rem;
+  outline: none;
+  min-width: 0;
+}
+
+.time-band-row .band-name:focus {
+  border-color: var(--accent);
+}
+
+.time-band-row .band-start {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.86rem;
+  font-family: var(--mono);
+  outline: none;
+  width: 92px;
+}
+
+.time-band-row .band-start:focus {
+  border-color: var(--accent);
+}
+
+.time-band-row .band-color {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.time-band-row .band-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.time-band-row .band-color::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+.settings-row input[type=number] {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.93rem;
+  width: 80px;
+  outline: none;
+}
+
+.settings-row input[type=number]:focus {
+  border-color: var(--accent);
 }
 
 .color-swatch {
