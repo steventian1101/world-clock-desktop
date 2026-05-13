@@ -894,6 +894,35 @@ function buildColorGrid() {
   }
 }
 
+function normalize24h(raw) {
+  if (!raw) return "";
+  let s = String(raw).trim().replace(/\s+/g, "");
+  const ampm = s.match(/(am|pm)$/i);
+  if (ampm) s = s.slice(0, -2);
+  let h, m;
+  const colon = s.match(/^(\d{1,2}):(\d{1,2})$/);
+  const digits = s.match(/^(\d{1,4})$/);
+  if (colon) {
+    h = parseInt(colon[1], 10);
+    m = parseInt(colon[2], 10);
+  } else if (digits) {
+    const d = digits[1].padStart(4, "0");
+    h = parseInt(d.slice(0, 2), 10);
+    m = parseInt(d.slice(2), 10);
+  } else {
+    return "";
+  }
+  if (Number.isNaN(h) || Number.isNaN(m)) return "";
+  if (ampm) {
+    const tag = ampm[1].toLowerCase();
+    if (h < 1 || h > 12) return "";
+    if (tag === "pm" && h !== 12) h += 12;
+    if (tag === "am" && h === 12) h = 0;
+  }
+  if (h < 0 || h > 23 || m < 0 || m > 59) return "";
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function buildTimeBandsList() {
   if (!$timeBandsList) return;
   $timeBandsList.innerHTML = "";
@@ -909,11 +938,15 @@ function buildTimeBandsList() {
     nameInput.placeholder = "Label";
 
     const startInput = document.createElement("input");
-    startInput.type = "time";
+    startInput.type = "text";
     startInput.className = "band-start";
-    startInput.lang = "en-GB";
-    startInput.step = 60;
-    startInput.value = band.startTime || "00:00";
+    startInput.value = normalize24h(band.startTime) || "00:00";
+    startInput.placeholder = "HH:MM";
+    startInput.maxLength = 5;
+    startInput.inputMode = "numeric";
+    startInput.pattern = "^([01]\\d|2[0-3]):[0-5]\\d$";
+    startInput.title = "24-hour format, HH:MM";
+    startInput.setAttribute("aria-label", "Band start time (24-hour HH:MM)");
 
     const colorInput = document.createElement("input");
     colorInput.type = "color";
@@ -925,7 +958,9 @@ function buildTimeBandsList() {
       persistSettings();
     });
     startInput.addEventListener("change", () => {
-      state.settings.timeBands[idx].startTime = startInput.value || "00:00";
+      const clean = normalize24h(startInput.value) || state.settings.timeBands[idx].startTime || "00:00";
+      startInput.value = clean;
+      state.settings.timeBands[idx].startTime = clean;
       tickAll();
       persistSettings();
     });
