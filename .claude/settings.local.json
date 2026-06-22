@@ -12,7 +12,15 @@
       "Bash(cargo check *)",
       "PowerShell(powershell -ExecutionPolicy Bypass -File \"d:\\\\Workspace\\\\clock-desktop\\\\src-tauri\\\\icons\\\\make-tauri-icons.ps1\")",
       "Bash(find \"/c/Users/Administrator/Downloads\" \"/c/Users/Administrator/Desktop\" \"/c/Users/Administrator/Pictures\" -maxdepth 2 -type f \\\\\\( -iname \"*.png\" -o -iname \"*.jpg\" -o -iname \"*.jpeg\" -o -iname \"*.webp\" \\\\\\) -newer \"/d/Workspace/clock-desktop/src-tauri/icons/make-tauri-icons.ps1\" 2>/dev/null | head -20)",
-      "Read(//c/Users/Administrator/Downloads/**)"
+      "Read(//c/Users/Administrator/Downloads/**)",
+      "Bash(rustc --version)",
+      "PowerShell($env:Path += \";$env:USERPROFILE\\\\.cargo\\\\bin\"; cargo --version; rustc --version; rustup target list --installed 2>$null)",
+      "PowerShell(winget install --id Rustlang.Rustup -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity)",
+      "PowerShell(winget install --id Microsoft.VisualStudio.2022.BuildTools -e --silent --accept-package-agreements --accept-source-agreements --disable-interactivity --override \"--quiet --wait --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended\")",
+      "PowerShell(npm install)",
+      "Bash(grep -iE \"error|elevat|admin|denied|1603|return value 3\" \"C:/Users/DeViL/AppData/Local/Temp/rust-msi-install.log\" 2>/dev/null | tr -s ' ' | head -25)",
+      "Read(//c/Users/DeViL/AppData/Local/Temp/**)",
+      "PowerShell(cmd /c \"C:\\\\Users\\\\DeViL\\\\Documents\\\\Workspace\\\\src\\\\world-clock-desktop\\\\build-exe.cmd\")"
     ]
   }
 }
